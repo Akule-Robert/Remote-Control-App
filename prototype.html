@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WiFi TV Remote</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --bg: #0d0d14;
+  --bg2: #13131e;
+  --bg3: #1c1c2a;
+  --bg4: #252536;
+  --surface: #1a1a28;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --accent: #5b6ef5;
+  --accent-dim: rgba(91,110,245,0.18);
+  --text: #f2f2f8;
+  --text2: #8888a8;
+  --text3: #4a4a65;
+  --green: #29c278;
+  --red: #f04545;
+  --yellow: #f0c040;
+  --r: 16px;
+  --r-sm: 10px;
+  --r-lg: 22px;
+  --r-full: 999px;
+  --phone-w: 390px;
+  --phone-h: 844px;
+}
+
+body {
+  background: #07070f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ── PHONE SHELL ── */
+.phone {
+  width: var(--phone-w);
+  height: var(--phone-h);
+  background: var(--bg);
+  border-radius: 44px;
+  border: 1.5px solid rgba(255,255,255,0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* Status bar */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px 0;
+  flex-shrink: 0;
+}
+.status-time { font-size: 15px; font-weight: 600; color: var(--text); }
+.status-icons { display: flex; align-items: center; gap: 6px; color: var(--text); }
+.status-icons svg { width: 16px; height: 16px; }
+
+/* Notch */
+.notch {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 120px; height: 34px;
+  background: #000;
+  border-radius: 0 0 20px 20px;
+  z-index: 10;
+}
+
+/* Screen area */
+.screen-area {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.screen {
+  display: none;
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.screen::-webkit-scrollbar { display: none; }
+.screen.active { display: block; }
+
+/* Bottom nav */
+.bottom-nav {
+  height: 80px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  padding-top: 8px;
+  flex-shrink: 0;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  color: var(--text3);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.nav-item svg { width: 22px; height: 22px; }
+.nav-item.active { color: var(--accent); }
+.nav-item.active svg { stroke: var(--accent); }
+
+/* ── CONNECT SCREEN ── */
+#s-connect { padding: 20px 20px 20px; }
+
+.screen-header {
+  padding: 6px 0 20px;
+}
+.screen-title { font-size: 22px; font-weight: 600; letter-spacing: -0.4px; color: var(--text); }
+.screen-sub { font-size: 13px; color: var(--text2); margin-top: 3px; }
+
+.scan-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-full);
+  padding: 10px 16px;
+  margin-bottom: 24px;
+}
+.scan-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green);
+  animation: blink-dot 2s infinite;
+  flex-shrink: 0;
+}
+@keyframes blink-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.scan-label { font-size: 13px; color: var(--text2); flex: 1; }
+
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 10px;
+}
+
+.tv-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-user-select: none;
+}
+.tv-card:active { transform: scale(0.97); }
+.tv-card.connected { border-color: rgba(91,110,245,0.4); background: rgba(91,110,245,0.07); }
+
+.tv-avatar {
+  width: 44px; height: 44px;
+  background: var(--bg4);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tv-avatar svg { width: 22px; height: 22px; color: var(--text2); }
+.tv-info { flex: 1; min-width: 0; }
+.tv-name { font-size: 15px; font-weight: 500; color: var(--text); }
+.tv-meta { font-size: 12px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.badge {
+  font-size: 11px; font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  flex-shrink: 0;
+}
+.badge-green { background: rgba(41,194,120,0.14); color: var(--green); }
+.badge-accent { background: var(--accent-dim); color: var(--accent); }
+
+/* ── REMOTE SCREEN ── */
+#s-remote { padding: 0 0 20px; }
+
+/* Mirror */
+.mirror-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
+  overflow: hidden;
+}
+#mirror-video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+#mirror-spinner {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: #000; gap: 10px; z-index: 2;
+}
+.spin-ring {
+  width: 28px; height: 28px;
+  border: 2px solid rgba(255,255,255,0.1);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#mirror-paused {
+  position: absolute; inset: 0;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.65); z-index: 2;
+}
+.mirror-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 8px 12px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  display: flex; align-items: center; gap: 8px;
+  z-index: 3;
+}
+.stream-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+.stream-label { font-size: 11px; color: rgba(255,255,255,0.6); flex: 1; }
+.mirror-icon-btn {
+  background: rgba(255,255,255,0.12);
+  border: none; border-radius: 6px;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: white;
+}
+.mirror-icon-btn:active { background: rgba(255,255,255,0.2); }
+
+/* TV info strip */
+.tv-strip {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 20px 0;
+}
+.conn-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: blink-dot 2s infinite; }
+.tv-strip-name { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; }
+.tv-strip-ip { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+/* Remote sections */
+.remote-section { padding: 14px 20px 0; }
+
+/* Power row */
+.power-row { display: flex; gap: 10px; }
+
+.r-btn {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 8px 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  cursor: pointer;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px; font-weight: 500;
+  transition: all 0.1s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.r-btn svg { width: 20px; height: 20px; }
+.r-btn:active { transform: scale(0.92); background: var(--bg4); }
+.r-btn.red-btn { color: var(--red); }
+.r-btn.accent-btn { background: var(--accent-dim); border-color: rgba(91,110,245,0.3); color: var(--accent); }
+
+/* Volume row */
+.vol-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 16px;
+}
+.vol-icon { color: var(--text3); flex-shrink: 0; }
+.vol-track {
+  flex: 1; height: 4px;
+  background: var(--bg4); border-radius: 2px; position: relative;
+}
+.vol-fill {
+  position: absolute; top:0;left:0;bottom:0;
+  background: var(--accent); border-radius: 2px;
+  transition: width 0.12s;
+}
+.vol-circle {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--bg4);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 300; color: var(--text);
+  cursor: pointer; flex-shrink: 0; line-height:1;
+}
+.vol-circle:active { background: var(--bg); transform: scale(0.9); }
+
+/* D-Pad */
+.dpad-container {
+  display: flex; justify-content: center;
+  padding: 4px 0;
+}
+.dpad {
+  display: grid;
+  grid-template-columns: 70px 70px 70px;
+  grid-template-rows: 70px 70px 70px;
+  gap: 6px;
+}
+.dp {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: var(--text);
+  cursor: pointer;
+  transition: all 0.1s;
+  -webkit-user-select: none;
+}
+.dp:active { transform: scale(0.88); background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.dp-ok {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  font-size: 13px; font-weight: 600;
+}
+.dp-ok:active { background: #4a5de0; transform: scale(0.88); border-color: #4a5de0; color: white; }
+.dp-empty { background: transparent; border: none; pointer-events: none; }
+
+/* Nav row */
+.nav-btns { display: flex; gap: 10px; }
+
+/* Media row */
+.media-row { display: flex; gap: 10px; }
+
+/* Color keys */
+.color-row { display: flex; gap: 8px; }
+.c-key {
+  flex: 1; height: 30px; border: none;
+  border-radius: 8px; cursor: pointer; opacity: 0.9;
+  transition: all 0.1s;
+}
+.c-key:active { transform: scale(0.92); opacity: 1; }
+.ck-r { background: #cc2a2a; }
+.ck-g { background: #1d9455; }
+.ck-y { background: #b08c0a; }
+.ck-b { background: #1560a8; }
+
+/* Mic */
+.mic-btn {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 20px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px; font-weight: 500;
+  transition: all 0.15s;
+  -webkit-user-select: none;
+}
+.mic-btn.listening { background: rgba(240,69,69,0.1); border-color: rgba(240,69,69,0.4); color: var(--red); }
+.mic-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
+.waveform { display: flex; align-items: center; gap: 2px; margin-left: auto; opacity: 0; transition: opacity 0.2s; }
+.waveform.on { opacity: 1; }
+.wb { width: 3px; border-radius: 2px; background: var(--red); animation: wave 0.5s ease-in-out infinite alternate; }
+.wb:nth-child(1){height:8px;animation-delay:0s}
+.wb:nth-child(2){height:16px;animation-delay:0.1s}
+.wb:nth-child(3){height:22px;animation-delay:0.05s}
+.wb:nth-child(4){height:14px;animation-delay:0.15s}
+.wb:nth-child(5){height:18px;animation-delay:0.08s}
+@keyframes wave{from{transform:scaleY(0.4)}to{transform:scaleY(1)}}
+
+/* ── KEYBOARD SCREEN ── */
+#s-keyboard { padding: 16px 12px 8px; }
+.kb-field {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  min-height: 56px;
+  font-size: 16px; color: var(--text);
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 4px;
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 0;
+  word-break: break-all;
+}
+.kb-field-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+.cursor { color: var(--accent); animation: cur 1s infinite; }
+@keyframes cur{0%,100%{opacity:1}50%{opacity:0}}
+.keyboard { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+.kb-row { display: flex; justify-content: center; gap: 5px; }
+.k {
+  height: 46px; min-width: 30px; flex: 1;
+  max-width: 38px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 500; color: var(--text);
+  cursor: pointer; -webkit-user-select: none;
+  transition: all 0.08s;
+}
+.k:active { transform: scale(0.88); background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.k-wide { max-width: 56px; font-size: 12px; }
+.k-space { max-width: 180px; color: var(--text3); font-size: 11px; }
+.k-send { max-width: 72px; background: var(--accent); border-color: var(--accent); color: white; font-size: 12px; font-weight: 600; }
+.k-send:active { background: #4a5de0; transform: scale(0.92); }
+.kb-send-btn {
+  width: 100%; margin-top: 10px;
+  background: var(--accent); border: none; border-radius: var(--r);
+  color: white; font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 600;
+  padding: 15px; cursor: pointer;
+  transition: all 0.1s;
+}
+.kb-send-btn:active { transform: scale(0.97); background: #4a5de0; }
+
+/* ── SETTINGS SCREEN ── */
+#s-settings { padding: 16px 16px 20px; }
+.settings-group { margin-bottom: 24px; }
+.settings-group-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; padding-left: 4px; }
+.settings-list { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; }
+.s-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 15px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.s-item:last-child { border-bottom: none; }
+.s-item:active { background: var(--bg4); }
+.s-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: var(--bg4);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.s-icon svg { width: 18px; height: 18px; color: var(--accent); }
+.s-text { flex: 1; min-width: 0; }
+.s-name { font-size: 14px; font-weight: 500; color: var(--text); }
+.s-desc { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.s-right { color: var(--text3); font-size: 13px; flex-shrink: 0; }
+.toggle {
+  width: 46px; height: 26px; border-radius: 13px;
+  background: var(--bg4); position: relative;
+  cursor: pointer; border: none; flex-shrink: 0;
+  transition: background 0.2s;
+}
+.toggle.on { background: var(--accent); }
+.toggle::after {
+  content: ''; position: absolute;
+  top: 3px; left: 3px;
+  width: 20px; height: 20px;
+  border-radius: 50%; background: white;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.toggle.on::after { transform: translateX(20px); }
+.s-select {
+  background: var(--bg4); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; padding: 5px 10px;
+  cursor: pointer;
+}
+
+/* ── PIN MODAL ── */
+.modal-backdrop {
+  display: none; position: absolute; inset: 0;
+  background: rgba(0,0,0,0.75); z-index: 50;
+  align-items: flex-end; justify-content: center;
+  border-radius: 44px; overflow: hidden;
+}
+.modal-backdrop.open { display: flex; }
+.modal-sheet {
+  width: 100%;
+  background: var(--bg2);
+  border-radius: 24px 24px 0 0;
+  border-top: 1px solid var(--border2);
+  padding: 24px 24px 36px;
+  text-align: center;
+  animation: sheet-up 0.3s cubic-bezier(0.34,1.3,0.64,1) both;
+}
+@keyframes sheet-up { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--border2); margin: 0 auto 20px; }
+.pin-row { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+.pin-box {
+  width: 60px; height: 72px;
+  background: var(--bg3); border: 2px solid var(--border2);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; font-weight: 700; font-family: 'DM Mono', monospace;
+  color: var(--accent);
+  animation: pop-in 0.35s cubic-bezier(0.34,1.5,0.64,1) both;
+}
+.pin-box:nth-child(2){animation-delay:.08s}
+.pin-box:nth-child(3){animation-delay:.16s}
+.pin-box:nth-child(4){animation-delay:.24s}
+@keyframes pop-in{from{opacity:0;transform:translateY(12px) scale(0.8)}to{opacity:1;transform:none}}
+.pin-timer { font-size: 12px; color: var(--text3); margin-bottom: 20px; }
+.sheet-btns { display: flex; gap: 10px; }
+.sheet-btn-cancel {
+  flex: 1; padding: 14px; border-radius: var(--r);
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 500; cursor: pointer;
+}
+.sheet-btn-cancel:active { background: var(--bg4); }
+.sheet-btn-confirm {
+  flex: 2; padding: 14px; border-radius: var(--r);
+  background: var(--accent); border: none;
+  color: white; font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.sheet-btn-confirm:active { background: #4a5de0; }
+
+/* ── TOAST ── */
+.toast {
+  position: absolute; bottom: 92px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(30,30,44,0.95);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-full);
+  padding: 10px 18px;
+  font-size: 13px; font-weight: 500; color: var(--text);
+  white-space: nowrap;
+  opacity: 0;
+  transition: all 0.25s cubic-bezier(0.34,1.3,0.64,1);
+  z-index: 40;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <!-- Notch -->
+  <div class="notch"></div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-time" id="clock">9:41</div>
+    <div class="status-icons">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="6" width="20" height="12" rx="2"/><rect x="23" y="10" width="1" height="4" rx="0.5"/></svg>
+    </div>
+  </div>
+
+  <!-- Screens -->
+  <div class="screen-area">
+
+    <!-- CONNECT -->
+    <div class="screen active" id="s-connect">
+      <div style="padding:16px 20px 20px">
+        <div class="screen-header">
+          <div class="screen-title">Find a TV</div>
+          <div class="screen-sub">Scanning your WiFi network</div>
+        </div>
+
+        <div class="scan-pill">
+          <div class="scan-dot"></div>
+          <span class="scan-label">mDNS scan — 3 devices found</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="var(--text3)"/></svg>
+        </div>
+
+        <div class="section-title">Available TVs</div>
+
+        <div class="tv-card connected" onclick="doConnect(this,'Living Room TV')">
+          <div class="tv-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg></div>
+          <div class="tv-info">
+            <div class="tv-name">Living Room TV</div>
+            <div class="tv-meta">GlobalStar Android TV · 192.168.1.42</div>
+          </div>
+          <span class="badge badge-accent">Connected</span>
+        </div>
+
+        <div class="tv-card" onclick="doConnect(this,'Bedroom TV')">
+          <div class="tv-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg></div>
+          <div class="tv-info">
+            <div class="tv-name">Bedroom TV</div>
+            <div class="tv-meta">Android TV · 192.168.1.58</div>
+          </div>
+          <span class="badge badge-green">Online</span>
+        </div>
+
+        <div class="tv-card" onclick="doConnect(this,'Kitchen Display')">
+          <div class="tv-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg></div>
+          <div class="tv-info">
+            <div class="tv-name">Kitchen Display</div>
+            <div class="tv-meta">Android TV · 192.168.1.74</div>
+          </div>
+          <span class="badge badge-green">Online</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- REMOTE -->
+    <div class="screen" id="s-remote">
+
+      <!-- Mirror -->
+      <div class="mirror-wrap">
+        <video id="mirror-video"
+          src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+          loop muted playsinline style="width:100%;height:100%;object-fit:cover;display:block;"></video>
+        <div id="mirror-spinner">
+          <div class="spin-ring"></div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.35);letter-spacing:.06em;text-transform:uppercase;">Connecting stream…</div>
+        </div>
+        <div id="mirror-paused" onclick="toggleStream()">
+          <div style="text-align:center;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:6px;letter-spacing:.06em;text-transform:uppercase;">Tap to resume</div>
+          </div>
+        </div>
+        <div class="mirror-bar">
+          <div class="stream-dot" id="sdot"></div>
+          <span class="stream-label" id="slabel">Connecting…</span>
+          <button class="mirror-icon-btn" onclick="toggleStream()" id="spause-btn" title="Pause">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="spause-icon"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          </button>
+          <button class="mirror-icon-btn" onclick="goFullscreen()" title="Fullscreen" style="margin-left:4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- TV strip -->
+      <div class="tv-strip">
+        <div class="conn-dot"></div>
+        <div class="tv-strip-name">Living Room TV</div>
+        <div class="tv-strip-ip">192.168.1.42</div>
+      </div>
+
+      <!-- Power / Source / Menu -->
+      <div class="remote-section">
+        <div class="power-row">
+          <button class="r-btn red-btn" onclick="rpress('Power')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+            Power
+          </button>
+          <button class="r-btn" onclick="rpress('Source')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+            Source
+          </button>
+          <button class="r-btn" onclick="rpress('Menu')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            Menu
+          </button>
+        </div>
+      </div>
+
+      <!-- Volume -->
+      <div class="remote-section">
+        <div class="vol-row">
+          <svg class="vol-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/></svg>
+          <div class="vol-track"><div class="vol-fill" id="vfill" style="width:40%"></div></div>
+          <span style="font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;min-width:32px;text-align:right;" id="vlabel">40%</span>
+          <button class="vol-circle" onclick="changeVol(-10)">−</button>
+          <button class="vol-circle" onclick="changeVol(10)">+</button>
+          <button class="r-btn" style="flex:0;padding:8px 12px;font-size:11px;" onclick="toggleMute(this)" id="mute-btn">Mute</button>
+        </div>
+      </div>
+
+      <!-- D-Pad -->
+      <div class="remote-section">
+        <div class="dpad-container">
+          <div class="dpad">
+            <div class="dp dp-empty"></div>
+            <div class="dp" onclick="rpress('Up')">▲</div>
+            <div class="dp dp-empty"></div>
+            <div class="dp" onclick="rpress('Left')">◀</div>
+            <div class="dp dp-ok" onclick="rpress('OK')">OK</div>
+            <div class="dp" onclick="rpress('Right')">▶</div>
+            <div class="dp dp-empty"></div>
+            <div class="dp" onclick="rpress('Down')">▼</div>
+            <div class="dp dp-empty"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Back / Home / CH -->
+      <div class="remote-section">
+        <div class="nav-btns">
+          <button class="r-btn" onclick="rpress('Back')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+          </button>
+          <button class="r-btn accent-btn" onclick="rpress('Home')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Home
+          </button>
+          <button class="r-btn" onclick="rpress('CH+')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="18 15 12 9 6 15"/></svg>
+            CH+
+          </button>
+          <button class="r-btn" onclick="rpress('CH-')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="6 9 12 15 18 9"/></svg>
+            CH−
+          </button>
+        </div>
+      </div>
+
+      <!-- Media -->
+      <div class="remote-section">
+        <div class="media-row">
+          <button class="r-btn" onclick="rpress('Rewind')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+            ⏮
+          </button>
+          <button class="r-btn" id="play-btn" onclick="togglePlay(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" id="play-icon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span id="play-label">Play</span>
+          </button>
+          <button class="r-btn" onclick="rpress('FastFwd')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+            ⏭
+          </button>
+        </div>
+      </div>
+
+      <!-- Color keys -->
+      <div class="remote-section">
+        <div class="color-row">
+          <button class="c-key ck-r" onclick="rpress('Red')"></button>
+          <button class="c-key ck-g" onclick="rpress('Green')"></button>
+          <button class="c-key ck-y" onclick="rpress('Yellow')"></button>
+          <button class="c-key ck-b" onclick="rpress('Blue')"></button>
+        </div>
+      </div>
+
+      <!-- Mic -->
+      <div class="remote-section" style="padding-bottom:4px;">
+        <button class="mic-btn" id="mic-btn" onmousedown="startMic()" onmouseup="stopMic()" onmouseleave="stopMic()" ontouchstart="startMic()" ontouchend="stopMic()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          <span id="mic-label">Hold for Voice</span>
+          <div class="waveform" id="waveform"><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div></div>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- KEYBOARD -->
+    <div class="screen" id="s-keyboard">
+      <div class="kb-field-label">TV input field</div>
+      <div class="kb-field"><span id="kb-text"></span><span class="cursor">|</span></div>
+
+      <div class="keyboard">
+        <div class="kb-row">
+          <div class="k" onclick="kt('q')">q</div><div class="k" onclick="kt('w')">w</div><div class="k" onclick="kt('e')">e</div><div class="k" onclick="kt('r')">r</div><div class="k" onclick="kt('t')">t</div><div class="k" onclick="kt('y')">y</div><div class="k" onclick="kt('u')">u</div><div class="k" onclick="kt('i')">i</div><div class="k" onclick="kt('o')">o</div><div class="k" onclick="kt('p')">p</div>
+        </div>
+        <div class="kb-row">
+          <div class="k" onclick="kt('a')">a</div><div class="k" onclick="kt('s')">s</div><div class="k" onclick="kt('d')">d</div><div class="k" onclick="kt('f')">f</div><div class="k" onclick="kt('g')">g</div><div class="k" onclick="kt('h')">h</div><div class="k" onclick="kt('j')">j</div><div class="k" onclick="kt('k')">k</div><div class="k" onclick="kt('l')">l</div>
+        </div>
+        <div class="kb-row">
+          <div class="k k-wide" onclick="kshift()" id="kshift">⇧</div>
+          <div class="k" onclick="kt('z')">z</div><div class="k" onclick="kt('x')">x</div><div class="k" onclick="kt('c')">c</div><div class="k" onclick="kt('v')">v</div><div class="k" onclick="kt('b')">b</div><div class="k" onclick="kt('n')">n</div><div class="k" onclick="kt('m')">m</div>
+          <div class="k k-wide" onclick="kback()">⌫</div>
+        </div>
+        <div class="kb-row">
+          <div class="k k-wide" onclick="showToast('Numbers')">123</div>
+          <div class="k k-space" onclick="kt(' ')">space</div>
+          <div class="k k-wide" onclick="kt('😊')" style="font-size:20px;">😊</div>
+          <div class="k k-send" onclick="ksend()">Send</div>
+        </div>
+      </div>
+      <button class="kb-send-btn" onclick="ksend()">Send to TV ↵</button>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="screen" id="s-settings">
+      <div class="screen-header" style="padding:16px 20px 4px;">
+        <div class="screen-title">Settings</div>
+      </div>
+      <div style="padding:0 16px 20px;">
+
+        <div class="settings-group">
+          <div class="settings-group-label">Paired TVs</div>
+          <div class="settings-list">
+            <div class="s-item">
+              <div class="s-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg></div>
+              <div class="s-text">
+                <div class="s-name">Living Room TV</div>
+                <div class="s-desc">192.168.1.42 · GlobalStar</div>
+              </div>
+              <span class="badge badge-accent" style="font-size:10px;">Active</span>
+            </div>
+            <div class="s-item">
+              <div class="s-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg></div>
+              <div class="s-text">
+                <div class="s-name">Bedroom TV</div>
+                <div class="s-desc">192.168.1.58 · Saved</div>
+              </div>
+              <svg class="s-right" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-label">Appearance</div>
+          <div class="settings-list">
+            <div class="s-item">
+              <div class="s-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
+              <div class="s-text">
+                <div class="s-name">Dark Theme</div>
+                <div class="s-desc">Currently enabled</div>
+              </div>
+              <button class="toggle on" onclick="this.classList.toggle('on');showToast('Theme updated')"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-label">Screen Mirroring</div>
+          <div class="settings-list">
+            <div class="s-item">
+              <div class="s-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+              <div class="s-text"><div class="s-name">Stream Quality</div></div>
+              <select class="s-select" onchange="showToast('Quality: '+this.value)">
+                <option>Low</option><option selected>Medium</option><option>High</option>
+              </select>
+            </div>
+            <div class="s-item">
+              <div class="s-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+              <div class="s-text">
+                <div class="s-name">Auto-stream on connect</div>
+              </div>
+              <button class="toggle on" onclick="this.classList.toggle('on');showToast('Saved')"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-label">Voice</div>
+          <div class="settings-list">
+            <div class="s-item">
+              <div class="s-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+              <div class="s-text"><div class="s-name">Language</div></div>
+              <select class="s-select" onchange="showToast(this.value)">
+                <option>English (US)</option><option>English (UK)</option><option>Español</option><option>Français</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-label">About</div>
+          <div class="settings-list">
+            <div class="s-item">
+              <div class="s-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+              <div class="s-text">
+                <div class="s-name">WiFi TV Remote</div>
+                <div class="s-desc">Version 1.0.0 — Prototype</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /screen-area -->
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <button class="nav-item" id="nav-connect" onclick="goScreen('connect')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
+      Pair
+    </button>
+    <button class="nav-item active" id="nav-remote" onclick="goScreen('remote')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="2" width="8" height="20" rx="4"/><circle cx="12" cy="8" r="1.5" fill="currentColor" stroke="none"/><line x1="10" y1="13" x2="14" y2="13"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+      Remote
+    </button>
+    <button class="nav-item" id="nav-keyboard" onclick="goScreen('keyboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6.01" y2="10" stroke-width="3" stroke-linecap="round"/><line x1="10" y1="10" x2="10.01" y2="10" stroke-width="3" stroke-linecap="round"/><line x1="14" y1="10" x2="14.01" y2="10" stroke-width="3" stroke-linecap="round"/><line x1="18" y1="10" x2="18.01" y2="10" stroke-width="3" stroke-linecap="round"/><line x1="8" y1="14" x2="16" y2="14" stroke-linecap="round"/></svg>
+      Keyboard
+    </button>
+    <button class="nav-item" id="nav-settings" onclick="goScreen('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+  </nav>
+
+  <!-- PIN bottom sheet -->
+  <div class="modal-backdrop" id="pin-modal">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div style="font-size:13px;color:var(--text2);">Enter this PIN on your TV</div>
+      <div style="font-size:18px;font-weight:600;color:var(--text);margin-top:4px;" id="pin-tv-label">Bedroom TV</div>
+      <div class="pin-row">
+        <div class="pin-box" id="p0">-</div>
+        <div class="pin-box" id="p1">-</div>
+        <div class="pin-box" id="p2">-</div>
+        <div class="pin-box" id="p3">-</div>
+      </div>
+      <div class="pin-timer">PIN expires in <span id="pin-secs">30</span>s</div>
+      <div class="sheet-btns">
+        <button class="sheet-btn-cancel" onclick="closePin()">Cancel</button>
+        <button class="sheet-btn-confirm" onclick="confirmPin()">Confirm ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+</div><!-- /phone -->
+
+<script>
+  // Clock
+  function updateClock(){
+    const d=new Date();
+    document.getElementById('clock').textContent=d.getHours()+':'+(d.getMinutes()+'').padStart(2,'0');
+  }
+  updateClock(); setInterval(updateClock,10000);
+
+  // Screen nav
+  function goScreen(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+    document.getElementById('s-'+id).classList.add('active');
+    document.getElementById('nav-'+id).classList.add('active');
+    document.getElementById('s-'+id).scrollTop=0;
+  }
+
+  // Toast
+  let toastTimer;
+  function showToast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>t.classList.remove('show'),2000);
+  }
+
+  // Volume
+  let vol=40, playing=false;
+  function changeVol(d){
+    vol=Math.max(0,Math.min(100,vol+d));
+    document.getElementById('vfill').style.width=vol+'%';
+    document.getElementById('vlabel').textContent=vol+'%';
+    showToast('Volume '+vol+'%');
+  }
+  function toggleMute(btn){
+    btn.classList.toggle('red-btn');
+    showToast(btn.classList.contains('red-btn')?'Muted':'Unmuted');
+  }
+
+  // D-pad / buttons
+  function rpress(k){
+    showToast('→ '+k);
+  }
+
+  // Play/pause
+  function togglePlay(btn){
+    playing=!playing;
+    document.getElementById('play-icon').innerHTML=playing
+      ?'<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+      :'<polygon points="5 3 19 12 5 21 5 3"/>';
+    document.getElementById('play-label').textContent=playing?'Pause':'Play';
+    showToast(playing?'Paused':'Playing');
+  }
+
+  // Mic
+  function startMic(){
+    document.getElementById('mic-btn').classList.add('listening');
+    document.getElementById('mic-label').textContent='Listening…';
+    document.getElementById('waveform').classList.add('on');
+  }
+  function stopMic(){
+    const b=document.getElementById('mic-btn');
+    if(!b.classList.contains('listening'))return;
+    b.classList.remove('listening');
+    document.getElementById('mic-label').textContent='Hold for Voice';
+    document.getElementById('waveform').classList.remove('on');
+    const cmds=['Volume up','Go to Netflix','Pause','Go home','Search Squid Game','Turn off'];
+    showToast('🎙 "'+cmds[Math.floor(Math.random()*cmds.length)]+'"');
+  }
+
+  // Connect / PIN
+  let pinTarget='', pinInterval;
+  function doConnect(el, name){
+    if(el.classList.contains('connected')){ goScreen('remote'); return; }
+    pinTarget=name;
+    document.getElementById('pin-tv-label').textContent=name;
+    const pin=String(Math.floor(1000+Math.random()*9000));
+    [0,1,2,3].forEach(i=>document.getElementById('p'+i).textContent=pin[i]);
+    let s=30; document.getElementById('pin-secs').textContent=s;
+    clearInterval(pinInterval);
+    pinInterval=setInterval(()=>{
+      s--; document.getElementById('pin-secs').textContent=s;
+      if(s<=0)clearInterval(pinInterval);
+    },1000);
+    document.getElementById('pin-modal').classList.add('open');
+  }
+  function closePin(){
+    document.getElementById('pin-modal').classList.remove('open');
+    clearInterval(pinInterval);
+  }
+  function confirmPin(){
+    closePin();
+    showToast('✓ '+pinTarget+' connected');
+    goScreen('remote');
+  }
+
+  // Keyboard
+  let ktext='', kshifted=false;
+  function kt(c){
+    if(c==='😊'){ktext+=c;}
+    else{ktext+=kshifted?c.toUpperCase():c; if(kshifted){kshifted=false;document.getElementById('kshift').style.color='';}}
+    document.getElementById('kb-text').textContent=ktext;
+  }
+  function kback(){ ktext=ktext.slice(0,-1); document.getElementById('kb-text').textContent=ktext; }
+  function kshift(){
+    kshifted=!kshifted;
+    document.getElementById('kshift').style.color=kshifted?'var(--accent)':'';
+  }
+  function ksend(){
+    if(!ktext.trim()){showToast('Nothing to send');return;}
+    showToast('Sent: "'+ktext.slice(0,20)+(ktext.length>20?'…':'')+'"');
+    ktext=''; document.getElementById('kb-text').textContent='';
+  }
+
+  // Video stream
+  const vid=document.getElementById('mirror-video');
+  const spinner=document.getElementById('mirror-spinner');
+  const pausedOv=document.getElementById('mirror-paused');
+  const sdot=document.getElementById('sdot');
+  const slabel=document.getElementById('slabel');
+  const spicon=document.getElementById('spause-icon');
+  let streamOn=false;
+  const qlabels=['Good · 720p · 22ms','Good · 720p · 18ms','Fair · 480p · 48ms','Good · 1080p · 20ms'];
+
+  vid.addEventListener('canplay',()=>{
+    vid.play().then(()=>{
+      spinner.style.display='none';
+      streamOn=true;
+      sdot.style.background='var(--green)';
+      slabel.textContent='Good · 720p · 24ms';
+      setInterval(()=>{ if(streamOn) slabel.textContent=qlabels[Math.floor(Math.random()*qlabels.length)]; },4500);
+    }).catch(()=>{});
+  });
+
+  function toggleStream(){
+    if(streamOn){
+      vid.pause(); streamOn=false;
+      sdot.style.background='var(--text3)';
+      slabel.textContent='Stream paused';
+      pausedOv.style.display='flex';
+      spicon.innerHTML='<polygon points="5 3 19 12 5 21 5 3"/>';
+    } else {
+      vid.play(); streamOn=true;
+      sdot.style.background='var(--green)';
+      slabel.textContent='Good · 720p · 24ms';
+      pausedOv.style.display='none';
+      spicon.innerHTML='<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    }
+    showToast(streamOn?'Stream resumed':'Stream paused');
+  }
+
+  function goFullscreen(){
+    const m=document.querySelector('.mirror-wrap');
+    (m.requestFullscreen||m.webkitRequestFullscreen||m.mozRequestFullScreen).call(m);
+  }
+</script>
+</body>
+</html>
